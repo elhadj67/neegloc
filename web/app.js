@@ -256,15 +256,16 @@ function route(scroll = true) {
   const tabs = $('#tabs'), bottom = $('#bottom'), tag = $('#spaceTag');
   if (!m) {
     space = null; document.body.dataset.space = '';
-    tabs.innerHTML = ''; bottom.innerHTML = ''; tag.hidden = true; $('#switchBtn').hidden = true;
+    tabs.innerHTML = ''; bottom.innerHTML = ''; tag.hidden = true;
+    const sw = $('#switchBtn'); sw.hidden = h === 'espaces'; sw.textContent = 'Espace propriétaire'; sw.dataset.go = 'pro-dashboard';
     $('#brand').setAttribute('href', '#');
-    header(); renderPortal(); if (scroll) scrollTo(0, 0); return;
+    header(); if (h === 'espaces') renderPortal(); else renderHome(); if (scroll) scrollTo(0, 0); return;
   }
   space = m[1];
   const sec = m[2], sp = SPACES[space];
   document.body.dataset.space = space;
   tag.hidden = !sp.tag; tag.textContent = sp.tag;
-  $('#switchBtn').hidden = false;
+  { const sw = $('#switchBtn'); sw.hidden = false; sw.textContent = 'Changer d’espace'; sw.dataset.go = 'espaces'; }
   $('#brand').setAttribute('href', '#' + space + '-' + sp.tabs[0][0]);
   const cur = sec.startsWith('annonce-') ? 'annonces' : sec;
   tabs.innerHTML = sp.tabs.map(([id, lab]) => `<button class="tab" data-go="${space}-${id}" ${id === cur ? 'aria-current="page"' : ''}>${lab}</button>`).join('');
@@ -288,6 +289,87 @@ function route(scroll = true) {
     renderAdmin(['overview', 'paiements', 'reservations', 'annonces', 'journal'].includes(sec) ? sec : 'overview');
   }
   if (scroll) scrollTo(0, 0);
+}
+
+/* ============ Accueil ============ */
+function heroArt() {
+  return `<svg viewBox="0 0 560 420" role="img" aria-label="Maison au Sénégal sous le soleil, avec un baobab" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE3B0"/><stop offset=".6" stop-color="#F8C98A"/><stop offset="1" stop-color="#F3B26E"/></linearGradient>
+      <linearGradient id="hsea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C8FB0"/><stop offset="1" stop-color="#2A6F8C"/></linearGradient>
+      <linearGradient id="hsand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EBCF9C"/><stop offset="1" stop-color="#DDB97C"/></linearGradient>
+    </defs>
+    <rect width="560" height="420" fill="url(#hsky)"/>
+    <circle cx="410" cy="120" r="62" fill="#FFB300" opacity=".95"/><circle cx="410" cy="120" r="88" fill="#FFB300" opacity=".18"/>
+    <path d="M300 74 q8 -7 16 0 q8 -7 16 0" fill="none" stroke="#5B3A1A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M345 96 q6 -5 12 0 q6 -5 12 0" fill="none" stroke="#5B3A1A" stroke-width="2.5" stroke-linecap="round"/>
+    <rect y="262" width="560" height="44" fill="url(#hsea)"/>
+    <path d="M0 270 q40 -6 80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2"/>
+    <path d="M0 300 C120 286 260 292 560 300 V420 H0 Z" fill="url(#hsand)"/>
+    <path d="M96 300 C100 250 104 220 96 190 L122 190 C116 222 118 254 124 300 Z" fill="#6B4423"/>
+    <path d="M100 196 C70 180 40 186 26 172 M110 192 C110 168 96 150 84 140 M116 194 C140 172 168 174 186 160 M106 192 C122 160 140 150 150 136" stroke="#6B4423" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <ellipse cx="44" cy="160" rx="40" ry="16" fill="#4F7A2A"/><ellipse cx="96" cy="132" rx="44" ry="18" fill="#5E8C33"/><ellipse cx="164" cy="146" rx="44" ry="17" fill="#4F7A2A"/>
+    <rect x="240" y="196" width="220" height="122" rx="6" fill="#FFFDF7"/>
+    <path d="M226 204 L350 120 L474 204 Z" fill="#0B5A32"/><path d="M226 204 L350 120 L360 127 L244 206 Z" fill="#0E7040"/>
+    <rect x="262" y="224" width="52" height="44" rx="4" fill="#F7C548"/><path d="M288 224 V268 M262 246 H314" stroke="#E0A81C" stroke-width="3"/>
+    <rect x="386" y="224" width="52" height="44" rx="4" fill="#F7C548"/><path d="M412 224 V268 M386 246 H438" stroke="#E0A81C" stroke-width="3"/>
+    <rect x="330" y="240" width="42" height="78" rx="4" fill="#C8102E"/><circle cx="363" cy="282" r="3" fill="#FCE3B0"/>
+    <rect x="236" y="314" width="228" height="8" rx="3" fill="#C9A66B"/>
+    <path d="M150 352 C230 330 330 334 430 352" stroke="#00853F" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M150 364 C230 342 330 346 430 364" stroke="#FDEF42" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M150 376 C230 354 330 358 430 376" stroke="#E31B23" stroke-width="7" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+const STEP_IC = {
+  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+  phone: '<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+};
+const ico = (p) => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+function renderHome() {
+  const dispo = S.listings.filter((l) => l.statut === 'disponible');
+  const vitrine = [...dispo, ...S.listings.filter((l) => l.statut !== 'disponible' && l.statut !== 'suspendu')].slice(0, 6);
+  const villes = [...new Set(S.listings.map((l) => l.ville))];
+  const carte = (l) => `<a class="card" href="#loc-annonce-${esc(l.id)}" data-go="loc-annonce-${esc(l.id)}" style="text-decoration:none;color:inherit">
+      <div class="art">${pic(l)}${statutPill(l.statut)}</div>
+      <div class="card-b"><div class="price">${fmt(l.loyer)} <small>/ mois</small></div><div class="card-t">${esc(l.titre)}</div>
+      <div class="meta"><span>${esc(l.quartier)}, ${esc(l.ville)}</span><span>${l.meuble ? 'Meublé' : 'Vide'}</span></div></div></a>`;
+  app.innerHTML = `
+  <section class="home-hero">
+    <div class="home-txt">
+      <div class="eyebrow">Location immobilière au Sénégal</div>
+      <h1>Trouvez votre logement, payez en toute sécurité</h1>
+      <p>Chambres, studios, appartements et villas. Réservez avec un acompte, payez par Wave ou Orange Money.</p>
+      <form class="search" id="homeSearch">
+        <select class="input" id="hVille" aria-label="Ville"><option value="Toutes">Toutes les villes</option>${villes.map((v) => `<option>${esc(v)}</option>`).join('')}</select>
+        <select class="input" id="hType" aria-label="Type"><option value="Tous">Tous les logements</option>${['Chambre', 'Studio', 'Appartement', 'Villa'].map((t) => `<option>${t}</option>`).join('')}</select>
+        <button class="btn btn-red" type="submit">Rechercher</button>
+      </form>
+    </div>
+    <div class="home-art">${heroArt()}</div>
+  </section>
+
+  <section class="home-sec">
+    <div class="section-h"><h2 class="h2" style="margin:0">Logements disponibles</h2><a class="btn btn-ghost btn-sm" href="#loc-annonces" data-go="loc-annonces">Voir toutes les annonces</a></div>
+    ${vitrine.length ? `<div class="grid">${vitrine.map(carte).join('')}</div>` : '<div class="box empty"><h2>Les premières annonces arrivent</h2><p class="muted">Vous êtes propriétaire ? Publiez votre logement, il apparaîtra ici.</p></div>'}
+  </section>
+
+  <section class="home-sec">
+    <h2 class="h2">Comment ça marche</h2>
+    <div class="how">
+      <div class="how-c"><span class="how-i">${ico(STEP_IC.shield)}</span><b>1. Réservez</b><p>Bloquez le logement ${S.params.blocage_heures} h avec un acompte, déduit de la caution.</p></div>
+      <div class="how-c"><span class="how-i">${ico(STEP_IC.phone)}</span><b>2. Payez par mobile</b><p>Caution par Wave ou Orange Money, gardée par Neeg Loc jusqu’aux clés.</p></div>
+      <div class="how-c"><span class="how-i">${ico(STEP_IC.key)}</span><b>3. Recevez vos clés</b><p>Contrat signé en ligne, puis loyers et quittances dans l’appli.</p></div>
+    </div>
+  </section>
+
+  <section class="home-pro">
+    <div><div class="eyebrow" style="color:#F7C548">Neeg Loc Pro</div><h2>Vous êtes propriétaire ?</h2><p>Publiez votre logement avec ses photos. Neeg Loc s’occupe des paiements, du contrat et des loyers.</p>
+      <button class="btn btn-gold" data-go="pro-dashboard">Publier mon logement</button></div>
+    <div class="home-pro-art">${art({ id: 'vitrine-pro', type: 'Appartement' })}</div>
+  </section>
+  ${isAdmin() ? '<p class="center" style="margin-top:22px"><a href="#adm-overview" data-go="adm-overview">Espace gestionnaire →</a></p>' : ''}`;
+  $('#homeSearch').onsubmit = (e) => { e.preventDefault(); filter.ville = $('#hVille').value; filter.type = $('#hType').value; go('loc-annonces'); };
 }
 
 function renderPortal() {
