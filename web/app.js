@@ -154,7 +154,7 @@ function art(l, variant = 0) {
   }
   return `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(${h},45%,84%)"/><stop offset="1" stop-color="hsl(${(h + 25) % 360},38%,66%)"/></linearGradient></defs><rect width="400" height="300" fill="url(#${g})"/><circle cx="330" cy="60" r="26" fill="#fff" opacity=".55"/>${scene}</svg>`;
 }
-const picRef = (p, l, v = 0) => (p ? `<img class="ph-img" src="${esc(photoUrl(p))}" alt="" loading="lazy">` : art(l, v % 3));
+const picRef = (p, l, v = 0, lazy = true) => (p ? `<img class="ph-img" src="${esc(photoUrl(p))}" alt=""${lazy ? ' loading="lazy"' : ''}>` : art(l, v % 3));
 const pic = (l) => picRef((l.photos || [])[0], l, 0);
 
 async function toJpeg(file, max = 1600, q = 0.82) {
@@ -480,8 +480,8 @@ function renderDetail(l) {
   const dispo = l.statut === 'disponible', mien = ME && l.owner_id === ME.id;
   const items = (l.photos || []).map((r) => ({ k: 'img', r })).concat(l.video ? [{ k: 'vid', r: l.video }] : []);
   const cur = items[GAL.i] || items[0];
-  const main = !cur ? art(l) : cur.k === 'vid' ? `<video src="${esc(photoUrl(cur.r))}" controls playsinline preload="metadata"></video>` : picRef(cur.r, l);
-  const thumbs = items.length > 1 ? `<div class="thumbs">${items.map((it, i) => `<button class="art" data-gi="${i}" aria-pressed="${it === cur}" aria-label="${it.k === 'vid' ? 'Vidéo' : 'Photo ' + (i + 1)}">${it.k === 'vid' ? '<span class="vid">▶ Vidéo</span>' : picRef(it.r, l, i)}</button>`).join('')}</div>`
+  const main = !cur ? art(l) : cur.k === 'vid' ? `<video src="${esc(photoUrl(cur.r))}" controls playsinline preload="metadata"></video>` : picRef(cur.r, l, 0, false);
+  const thumbs = items.length > 1 ? `<div class="thumbs">${items.map((it, i) => `<button class="art" data-gi="${i}" aria-pressed="${it === cur}" aria-label="${it.k === 'vid' ? 'Vidéo' : 'Photo ' + (i + 1)}">${it.k === 'vid' ? '<span class="vid">▶ Vidéo</span>' : picRef(it.r, l, i, false)}</button>`).join('')}</div>`
     : items.length ? '' : `<div class="thumbs" style="grid-template-columns:repeat(3,1fr)"><div class="art">${art(l, 1)}</div><div class="art">${art(l, 2)}</div><div class="art">${art(l)}</div></div>`;
   app.innerHTML = `
   <button class="back" data-go="loc-annonces">← Toutes les annonces</button>
