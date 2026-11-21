@@ -64,7 +64,8 @@ Principes :
 | `supabase/tests/scenario.sql` | Scénario SQL de bout en bout (acompte, expiration, caution, clés, loyer, fin de bail, confidentialité) |
 | `web/neegpay.js` | Fenêtre de paiement à intégrer dans l'application |
 | `web/retour.html`, `web/simulateur.html` | Page de retour après paiement ; page de l'opérateur simulé |
-| `web/demo.html` | Démo complète : connexion, annonces, réservation, paiement, contrat, clés, loyers, versements |
+| `web/index.html`, `app.js`, `app.css` | **Application Neeg Loc** : espaces locataire, propriétaire (Neeg Loc Pro) et gestionnaire ; annonces avec photos, réservation, paiement, contrat signé en ligne, rendez-vous, loyers et quittances, fin de bail, versements, modération |
+| `web/demo.html` | Page technique de test du parcours de l'argent |
 
 ## Mise en route (test avec le simulateur)
 
@@ -194,8 +195,7 @@ des tiers, délais de conservation).
 
 1. **Orange Money** : tester en sandbox avec les identifiants Sonatel, puis passer `ORANGE_MAPPING_VALIDE=true`.
 2. **Wave** : compte Wave Business et clés API (voir plus haut).
-3. **Porter l'application Neeg Loc complète** sur ce backend. `web/demo.html` couvre le parcours de
-   l'argent ; les écrans existants (annonces avec photos, espaces propriétaire et gestionnaire,
-   contrat, quittances) doivent remplacer leur stockage par les tables et fonctions SQL d'ici.
+3. **Application** : en ligne sur https://elhadj67.github.io/neegloc/ et testée de bout en bout
+   (publication, réservation, paiements, contrat, clés, loyers, quittance, fin de bail, arbitrage).
 4. **SMS / WhatsApp réels** : la table `notifications` porte le canal visé. Il reste à brancher un
    envoi (API SMS Orange, ou un fournisseur WhatsApp Business) par déclencheur ou par tâche planifiée.
