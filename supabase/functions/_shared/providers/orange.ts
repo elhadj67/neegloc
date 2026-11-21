@@ -74,7 +74,7 @@ export function parsePaymentResponse(paymentId: string, r: Json, now = Date.now(
   const validite = Number(r.validity);
   return {
     sessionId: paymentId,
-    action: { type: 'qr', qr, deeplinks, url: r.shortLink ?? undefined },
+    action: { type: 'qr', qr, deeplinks, url: r.shortLink || undefined },
     expiresAt: validite > 0 ? new Date(now + validite * 1000).toISOString() : undefined,
     raw: { qrId: r.qrId ?? null, validity: r.validity ?? null, shortLink: r.shortLink ?? null, deepLinks: deeplinks },
   };

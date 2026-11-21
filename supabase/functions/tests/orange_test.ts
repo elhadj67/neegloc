@@ -39,6 +39,9 @@ Deno.test('Orange : réponse QR → action « qr » avec liens et expiration', (
   assertEquals(r.sessionId, PAY);
   assertEquals(r.action, { type: 'qr', qr: 'data:image/png;base64,iVBORw0KGgo=', deeplinks: { MAXIT: 'https://sugu.orange-sonatel.com/mp/1', OM: 'https://sugu.orange-sonatel.com/mp/1' }, url: 'https://om.sn/abc' });
   assertEquals(r.expiresAt, new Date(1_000_000 + 1_800_000).toISOString());
+  // Réponse réelle de la sandbox (21/11/2026) : shortLink vide, deepLink et deepLinks identiques
+  const sb = parsePaymentResponse(PAY, { deepLink: 'https://sugu.orange-sonatel.com/mp/x', deepLinks: { OM: 'https://sugu.orange-sonatel.com/mp/x', MAXIT: 'https://sugu.orange-sonatel.com/mp/x' }, qrCode: 'AAA', validity: 1800, shortLink: '', qrId: 'x', validFor: { startDateTime: '2026-11-21T20:06:41', endDateTime: '2026-11-21T20:36:41' } });
+  assertEquals((sb.action as { url?: string }).url, undefined);
   // Ancienne forme : un seul lien profond
   const r2 = parsePaymentResponse(PAY, { deepLink: 'https://sugu.orange-sonatel.com/mp/2' });
   assertEquals((r2.action as { deeplinks: Record<string, string> }).deeplinks, { MAXIT: 'https://sugu.orange-sonatel.com/mp/2' });
