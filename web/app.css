@@ -76,6 +76,11 @@ button{cursor:pointer}
   .logo{height:36px}
   .account span.lbl{display:none}
   .account,.signup{padding:0 11px;font-size:13px}
+  body[data-space="loc"] .signup,body[data-space="pro"] .signup,body[data-space="adm"] .signup{display:none}
+  .top-in{gap:10px}
+  .brand{min-width:0;flex:0 1 auto}
+  .logo{max-width:40vw;height:auto;max-height:36px;object-fit:contain}
+  .space-tag{flex:none}
   .top-act{gap:6px}
   .bottom:not(:empty){display:grid;grid-auto-flow:column;grid-auto-columns:1fr;position:fixed;bottom:0;left:0;right:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
   .bottom button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--muted);padding:6px 0}
