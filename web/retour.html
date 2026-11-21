@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Neeg Loc · Paiement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#F4F6F3;--surface:#fff;--ink:#14231F;--muted:#5D6B65;--line:#E1E6E1;--ok:#2F7F52;--ok-soft:#E3F2E8;--warn:#A8680F;--warn-soft:#FBF0DE;--accent:#0B5A32}
   @media (prefers-color-scheme:dark){:root{--bg:#0D1412;--surface:#151F1C;--ink:#E8EFEB;--muted:#98A7A1;--line:#24312D;--ok:#6CC495;--ok-soft:#183027;--warn:#E8AE5A;--warn-soft:#33281A;--accent:#58B892}}
@@ -14,6 +16,7 @@
   @keyframes s{to{transform:rotate(360deg)}}
   h1{font-size:22px;margin:0 0 6px}p{color:var(--muted);margin:0 0 16px}
   a.btn{display:block;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;border-radius:12px;padding:13px}
+  h1,h2,.amt,header b{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em}
 </style>
 </head>
 <body>
@@ -24,7 +27,7 @@
 (async () => {
   const box = document.getElementById('box');
   const q = new URLSearchParams(location.search), id = q.get('p');
-  let retour = 'demo.html';
+  let retour = 'index.html#loc-locations';
   try { const s = JSON.parse(sessionStorage.getItem('neegpay-en-cours') || 'null'); if (s && s.id === id && s.retour) retour = s.retour; } catch {}
   const fin = (ok, titre, texte) => {
     box.innerHTML = `<div class="ic ${ok ? 'ok' : 'ko'}">${ok ? '✓' : '!'}</div><h1>${titre}</h1><p>${texte}</p><a class="btn" href="${retour}">Retour à Neeg Loc</a>`;

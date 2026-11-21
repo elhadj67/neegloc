@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulateur de paiement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#EEF1F4;--surface:#fff;--ink:#1B2430;--muted:#5F6B7A;--line:#DCE2E8;--blue:#1BA6E0;--red:#C8102E}
   @media (prefers-color-scheme:dark){:root{--bg:#0F141A;--surface:#18202A;--ink:#E6ECF2;--muted:#9AA7B5;--line:#2A3542}}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:100vh;padding:16px;box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:100vh;padding:16px;box-sizing:border-box}
   .box{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px 22px;width:min(400px,100%)}
   .tag{display:inline-block;background:#FBF0DE;color:#A8680F;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;padding:3px 8px}
   .amt{font-size:34px;font-weight:800;margin:10px 0 2px;font-variant-numeric:tabular-nums}
@@ -15,6 +17,7 @@
   .pay{background:var(--blue);color:#fff}.ref{background:var(--surface);color:var(--red);border:1px solid var(--line)}
   button[disabled]{opacity:.5;cursor:wait}
   .err{color:#A8680F;font-size:13px;min-height:1em}
+  h1,h2,.amt,header b{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em}
 </style>
 </head>
 <body>
