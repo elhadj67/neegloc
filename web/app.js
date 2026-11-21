@@ -258,7 +258,7 @@ function route(scroll = true) {
   if (!m) {
     space = null; document.body.dataset.space = '';
     tabs.innerHTML = ''; bottom.innerHTML = ''; tag.hidden = true;
-    const sw = $('#switchBtn'); sw.hidden = h === 'espaces'; sw.textContent = 'Espace propriétaire'; sw.dataset.go = 'pro-dashboard';
+    const sw = $('#switchBtn'); sw.hidden = h === 'espaces'; sw.innerHTML = '<span class="lbl">Espace propriétaire</span>'; sw.setAttribute('aria-label', 'Espace propriétaire'); sw.dataset.go = 'pro-dashboard';
     $('#brand').setAttribute('href', '#');
     header(); if (h === 'espaces') renderPortal(); else renderHome(); if (scroll) scrollTo(0, 0); return;
   }
@@ -266,7 +266,7 @@ function route(scroll = true) {
   const sec = m[2], sp = SPACES[space];
   document.body.dataset.space = space;
   tag.hidden = !sp.tag; tag.textContent = sp.tag;
-  { const sw = $('#switchBtn'); sw.hidden = false; sw.textContent = 'Changer d’espace'; sw.dataset.go = 'espaces'; }
+  { const sw = $('#switchBtn'); sw.hidden = false; sw.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg><span class="lbl">' + 'Changer d’espace</span>'; sw.setAttribute('aria-label', 'Changer d’espace'); sw.dataset.go = 'espaces'; }
   $('#brand').setAttribute('href', '#' + space + '-' + sp.tabs[0][0]);
   const cur = sec.startsWith('annonce-') ? 'annonces' : sec;
   tabs.innerHTML = sp.tabs.map(([id, lab]) => `<button class="tab" data-go="${space}-${id}" ${id === cur ? 'aria-current="page"' : ''}>${lab}</button>`).join('');
