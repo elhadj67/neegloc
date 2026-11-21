@@ -68,9 +68,9 @@ button{cursor:pointer}
   body[data-space=""] .switch,body:not([data-space]) .switch{display:none}
   .switch{padding:0;width:40px;justify-content:center}
   .switch .lbl{display:none}
-  .kpis{grid-template-columns:1fr 1fr;gap:10px}
-  .kpi{padding:14px}
-  .kpi b{font-size:20px}
+  main .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  main .kpi{padding:14px}
+  main .kpi b{font-size:20px}
   .section-h .btn{padding:10px 14px}
   .top-act{margin-left:auto}
   .logo{height:36px}
