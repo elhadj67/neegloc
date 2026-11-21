@@ -184,7 +184,7 @@
       if (a.type === 'qr') {
         corps = `${a.qr ? `<img class="np-qr" src="${esc(a.qr)}" alt="QR code de paiement">` : ''}
           <p class="np-c" style="font-size:14px">Scannez ce QR code avec Max It ou l’application Orange Money.</p>
-          ${Object.entries(a.deeplinks || {}).map(([k, u]) => `<a class="np-btn" style="display:block;text-align:center;text-decoration:none;background:#F07A10" href="${esc(u)}">Ouvrir ${esc(k === 'MAXIT' ? 'Max It' : k)}</a>`).join('')}
+          ${Object.entries(a.deeplinks || {}).map(([k, u]) => `<a class="np-btn" style="display:block;text-align:center;text-decoration:none;background:#F07A10" href="${esc(u)}">Ouvrir ${esc(({ MAXIT: 'Max It', OM: 'Orange Money' })[k] || k)}</a>`).join('')}
           ${a.url ? `<a class="np-btn np-g" style="display:block;text-align:center;text-decoration:none" href="${esc(a.url)}" target="_blank" rel="noopener">Ouvrir la page de paiement</a>` : ''}`;
       } else {
         if (mobile()) { location.href = a.url; }   // ouvre l'application de l'opérateur ; retour par retour.html

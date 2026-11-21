@@ -5,8 +5,9 @@ acompte de blocage, caution, solde et loyers payés par **Wave** ou **Orange Mon
 directement par l'opérateur. Viennent ensuite le séquestre de la caution, son versement au
 propriétaire, le reversement des loyers et les remboursements.
 
-> État : code écrit, **non exécuté** (voir « Ce qui reste à faire »). Wave est intégré d'après sa
-> documentation officielle. Orange Money attend la documentation technique de Sonatel.
+> État : déployé sur Supabase et testé de bout en bout avec le simulateur et le transfert manuel
+> (tests unitaires : `tools/deno.exe test supabase/functions/tests/`). Wave et Orange Money sont
+> intégrés d'après leur documentation officielle et attendent les identifiants marchands.
 
 ## Architecture
 
@@ -145,20 +146,31 @@ HMAC-SHA256 de « horodatage + corps brut », rejet au-delà de 5 min, plusieurs
 en-tête `Idempotency-Key` obligatoire sur les versements ; remboursement d'une session par
 `/refund` ; liste d'adresses IP de Wave à autoriser si un pare-feu filtre les webhooks.
 
-## Brancher Orange Money (à compléter)
+## Brancher Orange Money
 
-Sonatel ne publie pas sa documentation technique. Étapes :
-1. Créer un compte sur [developer.orange-sonatel.com](https://developer.orange-sonatel.com/) et une application de test.
-   Souscrire aux offres **OM Merchant Payment (QR code / Max It)**, **Notification** et, pour les
-   versements, **Cash In**.
-2. Avec la documentation obtenue, compléter dans `supabase/functions/_shared/providers/orange.ts` :
-   `buildPaymentRequest`, `parsePaymentResponse`, `parseStatusResponse` et `sessionIdFromCallback`.
-   La mécanique (jeton OAuth, appels, relecture du statut) est déjà en place.
-3. Renseigner les variables `ORANGE_*`. Déclarer l'URL de rappel
-   `…/functions/v1/webhook-orange?token=<ORANGE_CALLBACK_TOKEN>`.
-4. Passer `ORANGE_MAPPING_VALIDE=true` seulement après un paiement de test réussi en sandbox.
+L'adaptateur suit la spécification officielle « Orange Money API » v1.1.0 (22/10/2026), rangée dans
+`docs/orange/` (non versionnée : documentation Sonatel). Parcours :
 
-En attendant, les versements Orange se font à la main et se marquent « fait » dans l'espace gestionnaire.
+- `POST /oauth/v1/token` : jeton mis en cache jusqu'à son expiration.
+- `POST /api/eWallet/v4/qrcode` : QR code et liens Max It / Orange Money, valables 30 min, à usage unique.
+  Notre identifiant de paiement est envoyé comme `reference`, et l'URL de rappel (jeton compris) dans
+  l'en-tête `X-Callback-Url` : rien à déclarer chez Orange.
+- Rappel sur `webhook-orange` : jamais cru sur parole. Le statut est relu par
+  `GET /api/eWallet/v1/transactions?reference=…` avant tout encaissement ; doublons écartés grâce à
+  `X-Sonatel-Idempotency-Key`.
+
+Mise en service :
+1. Compte sur [developer.orange-sonatel.com](https://developer.orange-sonatel.com/), application de test,
+   offres **OM Merchant Payment** et **Notification**.
+2. Dans `supabase/functions/.env` : `ORANGE_CLIENT_ID`, `ORANGE_CLIENT_SECRET`, `ORANGE_MERCHANT_CODE`
+   (6 chiffres). `ORANGE_BASE_URL` pointe sur la sandbox par défaut.
+3. Ajouter `orange_money` à `MOYENS_ACTIFS` et à `moyens` dans `web/config.js`, envoyer les secrets.
+4. Payer un QR code de test avec un numéro de la sandbox (`GET /api/assignments/v1/partner/sim-cards`),
+   puis passer `ORANGE_MAPPING_VALIDE=true`.
+5. Production : `ORANGE_BASE_URL=https://api.orange-sonatel.com` et les identifiants de production.
+
+Les versements Orange (Cash In) demandent un compte distributeur et un code PIN chiffré en RSA : ils ne
+sont pas automatisés. Le gestionnaire les fait à la main et les marque « fait ».
 
 ## Sécurité
 
@@ -180,9 +192,8 @@ des tiers, délais de conservation).
 
 ## Ce qui reste à faire
 
-1. **Exécuter les tests** : rien n'a encore tourné. Il faut Deno (`deno test supabase/functions/tests/`)
-   et une base locale (`supabase start`, `supabase db reset`, puis `psql … -f supabase/tests/scenario.sql`).
-2. **Orange Money** : compléter l'adaptateur avec la documentation Sonatel (voir plus haut).
+1. **Orange Money** : tester en sandbox avec les identifiants Sonatel, puis passer `ORANGE_MAPPING_VALIDE=true`.
+2. **Wave** : compte Wave Business et clés API (voir plus haut).
 3. **Porter l'application Neeg Loc complète** sur ce backend. `web/demo.html` couvre le parcours de
    l'argent ; les écrans existants (annonces avec photos, espaces propriétaire et gestionnaire,
    contrat, quittances) doivent remplacer leur stockage par les tables et fonctions SQL d'ici.

@@ -1,8 +1,8 @@
 import { env, flag } from '../http.ts';
-import type { Db } from '../db.ts';
+import { type Db, functionsBase } from '../db.ts';
 import type { Provider, ProviderId } from './types.ts';
 import { waveProvider } from './wave.ts';
-import { orangeProvider } from './orange.ts';
+import { ORANGE_SANDBOX, orangeProvider } from './orange.ts';
 import { simulateurProvider } from './simulateur.ts';
 import { transfertProvider } from './transfert.ts';
 
@@ -22,14 +22,12 @@ export function getProvider(id: ProviderId, db: Db): Provider {
       });
     case 'orange_money':
       return orangeProvider({
-        baseUrl: env('ORANGE_BASE_URL'),
-        tokenPath: Deno.env.get('ORANGE_TOKEN_PATH') ?? '/oauth/token',
-        paymentPath: env('ORANGE_PAYMENT_PATH'),
-        statusPath: env('ORANGE_STATUS_PATH'),
+        baseUrl: Deno.env.get('ORANGE_BASE_URL') || ORANGE_SANDBOX,
         clientId: env('ORANGE_CLIENT_ID'),
         clientSecret: env('ORANGE_CLIENT_SECRET'),
         merchantCode: env('ORANGE_MERCHANT_CODE'),
-        merchantName: Deno.env.get('ORANGE_MERCHANT_NAME') ?? 'Neeg Loc',
+        merchantName: Deno.env.get('ORANGE_MERCHANT_NAME') || 'Neeg Loc',
+        callbackUrl: `${functionsBase()}/webhook-orange?token=${encodeURIComponent(env('ORANGE_CALLBACK_TOKEN'))}`,
         mappingValide: flag('ORANGE_MAPPING_VALIDE'),
       });
     case 'simulateur':

@@ -1,7 +1,8 @@
-// POST /webhook-orange?token=<ORANGE_CALLBACK_TOKEN> — rappel Orange Money.
-// Le format et l'authentification du rappel Sonatel ne sont pas publics : on exige un jeton secret
-// dans l'URL déclarée chez Orange, et on n'encaisse JAMAIS sur la foi du rappel. Le statut est
-// relu auprès de l'API Orange (trustPayload: false) avant toute écriture.
+// POST /webhook-orange?token=<ORANGE_CALLBACK_TOKEN> — rappel Orange Money (schéma « Notification »).
+// L'URL, jeton compris, est transmise à Orange dans l'en-tête X-Callback-Url de chaque QR code.
+// On n'encaisse JAMAIS sur la foi du rappel : le statut est relu auprès de l'API Orange
+// (trustPayload: false) avant toute écriture. Orange peut livrer un rappel plusieurs fois :
+// on déduplique sur X-Sonatel-Idempotency-Key.
 // Déployer avec --no-verify-jwt.
 
 import { env } from '../_shared/http.ts';
@@ -21,12 +22,13 @@ Deno.serve(async (req) => {
   if (!sessionId) return new Response('rappel sans identifiant', { status: 400 });
 
   const status = String(body?.status ?? 'inconnu');
+  const cle = req.headers.get('X-Sonatel-Idempotency-Key') || `${body?.transactionId ?? sessionId}:${status}`;
   return processEvent({
     provider: 'orange_money',
-    eventId: `${sessionId}:${status}`,
+    eventId: cle,
     type: `callback.${status}`,
     payload: body,
-    state: { sessionId, clientReference: body?.reference ?? null, amount: NaN, currency: 'XOF', status: 'pending', final: false, raw: body },
+    state: { sessionId, clientReference: sessionId, amount: NaN, currency: 'XOF', status: 'pending', final: false, raw: body },
     trustPayload: false,
   });
 });
