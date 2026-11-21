@@ -48,6 +48,24 @@ const toast = (m) => { const t = document.getElementById('toast'); t.textContent
 const errMsg = (e) => (e && (e.message || e.error_description)) || String(e);
 let me = null, profil = null;
 
+// Libellés lisibles des valeurs enregistrées en base
+const LIB = {
+  role: { locataire: 'Locataire', proprietaire: 'Propriétaire', admin: 'Gestionnaire' },
+  annonce: { disponible: 'Disponible', bloque: 'Réservé (blocage en cours)', loue: 'Loué', suspendu: 'Suspendu' },
+  etat: { attente_paiement: 'En attente de paiement', bloque: 'Bloqué pour vous', caution_payee: 'Caution payée', bail: 'Bail en cours', expire: 'Expiré', annule: 'Annulé', clos: 'Terminé' },
+  fonds: { aucun: 'aucun', sequestre: 'en séquestre chez Neeg Loc', a_verser: 'à verser au propriétaire', verse: 'versés au propriétaire', a_rembourser: 'à rembourser', rembourse: 'remboursés' },
+  kind: { acompte: 'Acompte', caution: 'Caution', solde: 'Solde de caution', loyer: 'Loyer' },
+  statut: { cree: 'Créé', en_attente: 'En attente', reussi: 'Payé', echoue: 'Échoué', expire: 'Expiré', rembourse: 'Remboursé' },
+  moyen: { wave: 'Wave', orange_money: 'Orange Money', simulateur: 'Simulateur (test)', transfert_wave: 'Wave (transfert)', transfert_om: 'Orange Money (transfert)' },
+  versement: { caution_proprio: 'Caution au propriétaire', loyer_proprio: 'Loyer au propriétaire', remboursement_locataire: 'Remboursement au locataire' },
+  vstatut: { a_faire: 'À faire', en_cours: 'En cours', reussi: 'Effectué', echoue: 'Échoué', manuel: 'Fait à la main' },
+  canal: { sms: 'SMS', whatsapp: 'WhatsApp', email: 'e-mail' },
+};
+const lib = (g, v) => esc(LIB[g]?.[v] ?? v);
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const mois = (m) => { const [a, n] = String(m || '').split('-'); return MOIS[+n - 1] ? `${MOIS[+n - 1]} ${a}` : esc(m); };
+const objet = (kind, m) => lib('kind', kind) + (m ? ' ' + mois(m) : '');
+
 async function rpc(fn, args) { const { data, error } = await sb.rpc(fn, args); if (error) { toast('Refusé : ' + errMsg(error)); throw error; } return data; }
 
 // Signature dessinée automatiquement à partir du nom (démo seulement)
@@ -72,7 +90,7 @@ async function rendreConnexion() {
 async function rendre() {
   const { data: p } = await sb.from('profiles').select('*').eq('id', me.id).single();
   profil = p;
-  document.getElementById('who').innerHTML = `<span class="muted">${esc(p.nom || me.email)} · ${esc(p.role)}</span><button class="g" id="out">Déconnexion</button>`;
+  document.getElementById('who').innerHTML = `<span class="muted">${esc(p.nom || me.email)} · ${lib('role', p.role)}</span><button class="g" id="out">Déconnexion</button>`;
   document.getElementById('out').onclick = () => sb.auth.signOut();
 
   const [{ data: annonces }, { data: resas }, { data: notifs }] = await Promise.all([
@@ -89,13 +107,13 @@ async function rendre() {
 
   html += `<section><h2>Annonces</h2><div class="grid">${(annonces || []).map((l) => `<div class="card">
       <div class="price">${fmt(l.loyer)} <span class="muted">/ mois</span></div><b>${esc(l.titre)}</b>
-      <span class="muted">${esc(l.quartier)}, ${esc(l.ville)} · ${esc(l.proprio_nom)}</span><span class="pill">${esc(l.statut)}</span>
+      <span class="muted">${esc(l.quartier)}, ${esc(l.ville)} · ${esc(l.proprio_nom)}</span><span class="pill">${lib('annonce', l.statut)}</span>
       ${l.statut === 'disponible' && l.owner_id !== me.id ? `<div class="row"><button class="r" data-res="${l.id}" data-k="acompte">Bloquer (acompte)</button><button class="g" data-res="${l.id}" data-k="caution">Payer la caution</button></div>` : ''}
     </div>`).join('') || '<p class="muted">Aucune annonce. Publiez-en une ci-dessous.</p>'}</div></section>`;
 
   html += `<section><h2>Mes locations</h2>${miennes.map((b) => `<div class="card" style="margin-bottom:10px">
-      <div class="row" style="justify-content:space-between"><b style="flex:0 1 auto">${esc(b.listing?.titre)} · ${b.id}</b><span class="pill" style="flex:0 0 auto">${b.etat}</span></div>
-      <span class="muted">Caution ${fmt(b.caution)} · loyer ${fmt(b.loyer)} · fonds : ${b.fonds}${b.etat === 'bloque' ? ' · blocage depuis le ' + new Date(b.bloc_debut).toLocaleString('fr-FR') : ''}</span>
+      <div class="row" style="justify-content:space-between"><b style="flex:0 1 auto">${esc(b.listing?.titre)} · ${b.id}</b><span class="pill" style="flex:0 0 auto">${lib('etat', b.etat)}</span></div>
+      <span class="muted">Caution ${fmt(b.caution)} · loyer ${fmt(b.loyer)} · fonds ${lib('fonds', b.fonds)}${b.etat === 'bloque' ? ' · blocage depuis le ' + new Date(b.bloc_debut).toLocaleString('fr-FR') : ''}</span>
       <div class="row" data-att="${b.id}"></div>
       <div class="row">
         ${b.etat === 'caution_payee' && !b.sign_loc ? `<button class="g" data-act="signer" data-id="${b.id}">Signer le contrat</button>` : ''}
@@ -103,14 +121,14 @@ async function rendre() {
         ${b.etat === 'caution_payee' && b.rdv_date ? `<button data-act="cles" data-id="${b.id}">J’ai reçu les clés</button>` : ''}
       </div>
       <div class="wrap"><table><tr><th>Paiement</th><th>Montant</th><th>Moyen</th><th>Statut</th></tr>${(b.payments || []).sort((a, c) => c.created_at.localeCompare(a.created_at)).map((x) =>
-        `<tr><td>${x.kind}${x.mois ? ' ' + x.mois : ''}</td><td>${fmt(x.amount)}</td><td>${x.provider}</td><td>${x.status}</td></tr>`).join('')}</table></div>
+        `<tr><td>${objet(x.kind, x.mois)}</td><td>${fmt(x.amount)}</td><td>${lib('moyen', x.provider)}</td><td>${lib('statut', x.status)}</td></tr>`).join('')}</table></div>
     </div>`).join('') || '<p class="muted">Aucune location.</p>'}</section>`;
 
   html += `<section><h2>Mes logements (propriétaire)</h2>
     <div class="row"><input class="in" id="lt" placeholder="Titre"><select class="in" id="ly"><option>Studio</option><option>Chambre</option><option>Appartement</option><option>Villa</option></select>
     <input class="in" id="lq" placeholder="Quartier"><input class="in" id="lv" placeholder="Ville" value="Dakar"><input class="in" id="ll" type="number" placeholder="Loyer" value="150000">
     <button id="lp" style="flex:0 1 auto">Publier</button></div>
-    ${surMesLogements.map((b) => `<div class="card" style="margin-top:10px"><b>${esc(b.listing?.titre)} · ${b.id}</b><span class="muted">${esc(b.loc_nom)} · ${b.etat} · fonds : ${b.fonds}</span>
+    ${surMesLogements.map((b) => `<div class="card" style="margin-top:10px"><b>${esc(b.listing?.titre)} · ${b.id}</b><span class="muted">${esc(b.loc_nom)} · ${lib('etat', b.etat)} · fonds ${lib('fonds', b.fonds)}</span>
       ${b.etat === 'caution_payee' && !b.sign_prop ? `<div><button class="g" data-act="signer" data-id="${b.id}">Signer le contrat (bailleur)</button></div>` : ''}</div>`).join('')}</section>`;
 
   if (p.role === 'admin') {
@@ -120,7 +138,7 @@ async function rendre() {
     html += `<section><h2>Gestionnaire · transferts à vérifier</h2>
       <p class="muted">Retrouvez chaque transfert dans l’historique de votre compte (montant, numéro, référence) avant de valider.</p>
       <div class="wrap"><table><tr><th>Locataire</th><th>Objet</th><th>Montant</th><th>Moyen</th><th>Référence</th><th>Depuis</th><th></th></tr>${(trs || []).map((x) => `<tr>
-        <td>${esc(x.booking?.loc_nom)}<br><span class="muted">${x.booking_id}</span></td><td>${x.kind}${x.mois ? ' ' + x.mois : ''}${x.status === 'expire' ? '<br><span class="muted">délai dépassé</span>' : ''}</td>
+        <td>${esc(x.booking?.loc_nom)}<br><span class="muted">${x.booking_id}</span></td><td>${objet(x.kind, x.mois)}${x.status === 'expire' ? '<br><span class="muted">délai dépassé</span>' : ''}</td>
         <td><b>${fmt(x.amount)}</b></td><td>${x.provider === 'transfert_wave' ? 'Wave' : 'Orange Money'}</td><td>${esc(x.tx_id)}${x.declare_sms ? `<br><span class="muted">${esc(x.declare_sms).slice(0, 160)}</span>` : ''}</td>
         <td>${esc(x.payer_tel)}<br><span class="muted">${new Date(x.declare_le).toLocaleString('fr-FR')}</span></td>
         <td style="white-space:nowrap"><button data-tv="${x.id}">Reçu</button> <button class="g" data-tr="${x.id}">Non reçu</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">Aucun transfert en attente.</td></tr>'}</table></div></section>`;
@@ -128,17 +146,17 @@ async function rendre() {
     html += `<section><h2>Gestionnaire · versements</h2><div class="row" style="margin-bottom:10px">
       <button id="run" style="flex:0 1 auto">Exécuter les versements en attente</button><button class="g" id="mnt" style="flex:0 1 auto">Réconcilier les paiements</button></div>
       <div class="wrap"><table><tr><th>Type</th><th>Bénéficiaire</th><th>Montant</th><th>Moyen</th><th>Statut</th><th></th></tr>${(pos || []).map((x) => `<tr>
-        <td>${x.kind}</td><td>${esc(x.nom)}<br><span class="muted">${esc(x.tel)}</span></td><td>${fmt(x.montant)}</td><td>${x.provider}</td><td>${x.statut}${x.erreur ? '<br><span class="muted">' + esc(x.erreur) + '</span>' : ''}</td>
+        <td>${lib('versement', x.kind)}</td><td>${esc(x.nom)}<br><span class="muted">${esc(x.tel)}</span></td><td>${fmt(x.montant)}</td><td>${lib('moyen', x.provider)}</td><td>${lib('vstatut', x.statut)}${x.erreur ? '<br><span class="muted">' + esc(x.erreur) + '</span>' : ''}</td>
         <td>${['a_faire', 'echoue'].includes(x.statut) ? `<button class="g" data-man="${x.id}">Marquer fait</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun versement.</td></tr>'}</table></div></section>`;
   }
 
-  html += `<section><h2>Notifications</h2>${(notifs || []).map((n) => `<p style="margin:0 0 8px"><span class="pill">${n.canal}</span> ${esc(n.texte)} <span class="muted">${new Date(n.created_at).toLocaleString('fr-FR')}</span></p>`).join('') || '<p class="muted">Aucune.</p>'}</section>`;
+  html += `<section><h2>Notifications</h2>${(notifs || []).map((n) => `<p style="margin:0 0 8px">${esc(n.texte)} <span class="muted">${new Date(n.created_at).toLocaleString('fr-FR')}${LIB.canal[n.canal] ? ` · envoi par ${LIB.canal[n.canal]} pas encore activé` : ''}</span></p>`).join('') || '<p class="muted">Aucune.</p>'}</section>`;
   app.innerHTML = html;
 
   // Ce qui reste à payer, calculé par le serveur
   for (const el of app.querySelectorAll('[data-att]')) {
     const { data } = await sb.rpc('paiements_attendus', { p_booking: el.dataset.att });
-    el.innerHTML = (data || []).map((x) => `<button class="r" data-pay="${el.dataset.att}" data-k="${x.kind}" data-m="${x.mois || ''}" data-mt="${x.montant}">Payer ${x.kind === 'loyer' ? 'le loyer ' + x.mois : x.kind} · ${fmt(x.montant)}</button>`).join('');
+    el.innerHTML = (data || []).map((x) => `<button class="r" data-pay="${el.dataset.att}" data-k="${x.kind}" data-m="${x.mois || ''}" data-mt="${x.montant}">Payer ${x.kind === 'loyer' ? 'le loyer de ' + mois(x.mois) : ({ acompte: 'l’acompte', caution: 'la caution', solde: 'le solde de caution' })[x.kind] || x.kind} · ${fmt(x.montant)}</button>`).join('');
   }
   lier(annonces || [], resas || []);
 }
