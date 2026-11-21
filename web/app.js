@@ -247,6 +247,7 @@ function header() {
   const btn = $('#accountBtn');
   btn.innerHTML = ME ? `<span class="av">${esc(initiales(PROFIL?.nom || ME.email))}</span><span class="lbl">${esc((PROFIL?.nom || ME.email).split(' ')[0])}</span>` : 'Se connecter';
   $('#bellBtn').hidden = !ME || !space;
+  $('#signupBtn').hidden = !!ME;
   updateBell();
 }
 
@@ -399,8 +400,8 @@ function renderNeedLogin() {
 }
 
 /* ============ Connexion ============ */
-function openAuth(raison) {
-  let mode = 'in';
+function openAuth(raison, depart = 'in') {
+  let mode = depart;
   const draw = (msg = '') => {
     openModal(`<div class="m-h"><h2>${mode === 'in' ? 'Connexion' : 'Créer un compte'}</h2><button class="x" aria-label="Fermer">×</button></div>
     <div class="m-b">${raison ? `<p class="muted" style="margin-top:0">${esc(raison)}</p>` : ''}
@@ -463,6 +464,7 @@ function openAccount() {
   $('#logout').onclick = async () => { closeModal(); await sb.auth.signOut(); toast('À bientôt'); go(''); };
 }
 $('#accountBtn').onclick = openAccount;
+$('#signupBtn').onclick = () => openAuth('Créez votre compte gratuit pour réserver un logement ou publier le vôtre.', 'up');
 
 /** Nom et téléphone sont nécessaires pour réserver ou publier. */
 function ensureIdentity(pourquoi) {
