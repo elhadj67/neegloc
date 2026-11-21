@@ -1,0 +1,22 @@
+# Configuration Supabase CLI (complétée par « supabase init » si besoin).
+project_id = "neegloc"
+
+[auth]
+site_url = "http://localhost:5500"
+
+# Ces fonctions sont appelées par les opérateurs ou par une page hors session :
+# leur authentification est faite dans le code (signature, jeton secret).
+[functions.webhook-wave]
+verify_jwt = false
+
+[functions.webhook-orange]
+verify_jwt = false
+
+[functions.webhook-simulateur]
+verify_jwt = false
+
+[functions.simulateur]
+verify_jwt = false
+
+[functions.paiements-maintenance]
+verify_jwt = false

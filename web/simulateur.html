@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur de paiement</title>
+<style>
+  :root{--bg:#EEF1F4;--surface:#fff;--ink:#1B2430;--muted:#5F6B7A;--line:#DCE2E8;--blue:#1BA6E0;--red:#C8102E}
+  @media (prefers-color-scheme:dark){:root{--bg:#0F141A;--surface:#18202A;--ink:#E6ECF2;--muted:#9AA7B5;--line:#2A3542}}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:100vh;padding:16px;box-sizing:border-box}
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px 22px;width:min(400px,100%)}
+  .tag{display:inline-block;background:#FBF0DE;color:#A8680F;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;padding:3px 8px}
+  .amt{font-size:34px;font-weight:800;margin:10px 0 2px;font-variant-numeric:tabular-nums}
+  p{color:var(--muted);margin:0 0 6px}
+  button{width:100%;border:0;border-radius:12px;padding:14px;font:inherit;font-weight:700;cursor:pointer;margin-top:12px}
+  .pay{background:var(--blue);color:#fff}.ref{background:var(--surface);color:var(--red);border:1px solid var(--line)}
+  button[disabled]{opacity:.5;cursor:wait}
+  .err{color:#A8680F;font-size:13px;min-height:1em}
+</style>
+</head>
+<body>
+<div class="box" id="box"><p>Chargement…</p></div>
+<script src="config.js"></script>
+<script>
+(async () => {
+  const cfg = window.NEEGLOC_CONFIG, box = document.getElementById('box');
+  const session = new URLSearchParams(location.search).get('session') || '';
+  const api = `${cfg.supabaseUrl}/functions/v1/simulateur`;
+  const headers = { apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${cfg.supabaseAnonKey}`, 'Content-Type': 'application/json' };
+  let r;
+  try { r = await fetch(`${api}?session=${encodeURIComponent(session)}`, { headers }); }
+  catch { box.innerHTML = '<p>Serveur de paiement injoignable. Vérifiez votre connexion puis rechargez la page.</p>'; return; }
+  const s = await r.json().catch(() => ({}));
+  if (!r.ok) { box.innerHTML = '<p>Session de paiement introuvable ou expirée.</p>'; return; }
+  const kind = { acompte: 'Acompte de blocage', caution: 'Caution', solde: 'Solde de caution', loyer: 'Loyer' }[s.kind] || 'Paiement';
+  box.innerHTML = `<span class="tag">Simulateur · aucun argent réel</span>
+    <div class="amt">${Math.round(s.amount).toLocaleString('fr-FR')} FCFA</div>
+    <p>Bénéficiaire : <b>Neeg Loc</b></p><p>${kind}${s.mois ? ' ' + s.mois : ''} · réservation ${s.booking_id || ''}</p>
+    ${s.statut !== 'open' ? '<p><b>Cette session est terminée.</b></p>' : `
+    <button class="pay" id="ok">Valider le paiement</button>
+    <button class="ref" id="ko">Refuser</button>`}
+    <p class="err" id="err"></p>`;
+  const agir = async (action) => {
+    box.querySelectorAll('button').forEach((b) => b.disabled = true);
+    let res;
+    try { res = await fetch(api, { method: 'POST', headers, body: JSON.stringify({ session, action }) }); }
+    catch { document.getElementById('err').textContent = 'Serveur injoignable, réessayez.'; box.querySelectorAll('button').forEach((b) => b.disabled = false); return; }
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) { document.getElementById('err').textContent = 'Erreur : ' + (j.error || res.status); return; }
+    location.href = j.redirect;
+  };
+  if (s.statut === 'open') {
+    document.getElementById('ok').onclick = () => agir('payer');
+    document.getElementById('ko').onclick = () => agir('refuser');
+  }
+})();
+</script>
+</body>
+</html>

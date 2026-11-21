@@ -1,0 +1,8 @@
+supabase/functions/.env
+.supabase-token
+.supabase-db-password
+supabase/.temp/
+supabase/.branches/
+node_modules/
+.DS_Store
+tools/

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neeg Loc · Démo paiement</title>
+<style>
+  :root{--bg:#F4F6F3;--surface:#fff;--ink:#14231F;--muted:#5D6B65;--line:#E1E6E1;--accent:#0B5A32;--soft:#E1EFE6;--red:#C8102E;--gold:#C48700}
+  @media (prefers-color-scheme:dark){:root{--bg:#0D1412;--surface:#151F1C;--ink:#E8EFEB;--muted:#98A7A1;--line:#24312D;--accent:#58B892;--soft:#1A2D27;--red:#F0505A;--gold:#E0B465}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface);flex-wrap:wrap}
+  header b{font-size:20px}header b span{color:var(--gold)}
+  main{max-width:1000px;margin:0 auto;padding:16px}
+  section{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+  h2{font-size:18px;margin:0 0 10px}
+  .muted{color:var(--muted);font-size:13.5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+  .price{color:var(--red);font-weight:700;font-size:17px}
+  button,.in{font:inherit}
+  button{border:0;border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
+  button.g{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+  button.r{background:var(--red)}
+  .in{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg);color:var(--ink);width:100%}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row > *{flex:1 1 160px}
+  .pill{display:inline-block;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700;background:var(--soft);color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .wrap{overflow-x:auto}
+  #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;display:none;max-width:calc(100% - 32px)}
+</style>
+</head>
+<body>
+<header><b>Neeg <span>Loc</span> · démo paiement</b><div class="row" id="who" style="flex:0 1 auto"></div></header>
+<main id="app"><section><p class="muted">Chargement…</p></section></main>
+<div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="neegpay.js"></script>
+<script>
+const cfg = window.NEEGLOC_CONFIG;
+const sb = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+NeegPay.init(sb, { moyens: cfg.moyens });
+const app = document.getElementById('app');
+const fmt = (n) => Math.round(n).toLocaleString('fr-FR') + ' FCFA';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 3500); };
+const errMsg = (e) => (e && (e.message || e.error_description)) || String(e);
+let me = null, profil = null;
+
+async function rpc(fn, args) { const { data, error } = await sb.rpc(fn, args); if (error) { toast('Refusé : ' + errMsg(error)); throw error; } return data; }
+
+// Signature dessinée automatiquement à partir du nom (démo seulement)
+function signature(nom) {
+  const c = document.createElement('canvas'); c.width = 320; c.height = 90;
+  const x = c.getContext('2d'); x.font = 'italic 34px Georgia, serif'; x.fillStyle = '#14231F'; x.fillText(nom || 'Signature', 12, 58);
+  return c.toDataURL('image/png');
+}
+
+async function rendreConnexion() {
+  document.getElementById('who').innerHTML = '';
+  app.innerHTML = `<section style="max-width:420px;margin:24px auto"><h2>Connexion</h2>
+    <p class="muted">Compte de démonstration par e-mail et mot de passe.</p>
+    <div style="display:grid;gap:8px"><input class="in" id="em" type="email" placeholder="E-mail" autocomplete="email">
+    <input class="in" id="pw" type="password" placeholder="Mot de passe (8 caractères min.)" autocomplete="current-password">
+    <div class="row"><button id="in">Se connecter</button><button class="g" id="up">Créer le compte</button></div></div></section>`;
+  const v = () => ({ email: document.getElementById('em').value.trim(), password: document.getElementById('pw').value });
+  document.getElementById('in').onclick = async () => { const { error } = await sb.auth.signInWithPassword(v()); if (error) toast(errMsg(error)); };
+  document.getElementById('up').onclick = async () => { const { error } = await sb.auth.signUp(v()); toast(error ? errMsg(error) : 'Compte créé. Confirmez l’e-mail si demandé, puis connectez-vous.'); };
+}
+
+async function rendre() {
+  const { data: p } = await sb.from('profiles').select('*').eq('id', me.id).single();
+  profil = p;
+  document.getElementById('who').innerHTML = `<span class="muted">${esc(p.nom || me.email)} · ${esc(p.role)}</span><button class="g" id="out">Déconnexion</button>`;
+  document.getElementById('out').onclick = () => sb.auth.signOut();
+
+  const [{ data: annonces }, { data: resas }, { data: notifs }] = await Promise.all([
+    sb.from('listings').select('*').order('created_at', { ascending: false }),
+    sb.from('bookings').select('*, listing:listings(titre, quartier, ville, owner_id), payments(id, kind, mois, amount, status, provider, created_at)').order('created_at', { ascending: false }),
+    sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(15),
+  ]);
+  const miennes = (resas || []).filter((b) => b.locataire_id === me.id);
+  const surMesLogements = (resas || []).filter((b) => b.listing?.owner_id === me.id);
+
+  let html = `<section><h2>Mon profil</h2><div class="row">
+      <input class="in" id="pn" placeholder="Nom complet" value="${esc(p.nom)}"><input class="in" id="pt" placeholder="Téléphone" value="${esc(p.tel)}">
+      <button class="g" id="ps" style="flex:0 1 auto">Enregistrer</button></div></section>`;
+
+  html += `<section><h2>Annonces</h2><div class="grid">${(annonces || []).map((l) => `<div class="card">
+      <div class="price">${fmt(l.loyer)} <span class="muted">/ mois</span></div><b>${esc(l.titre)}</b>
+      <span class="muted">${esc(l.quartier)}, ${esc(l.ville)} · ${esc(l.proprio_nom)}</span><span class="pill">${esc(l.statut)}</span>
+      ${l.statut === 'disponible' && l.owner_id !== me.id ? `<div class="row"><button class="r" data-res="${l.id}" data-k="acompte">Bloquer (acompte)</button><button class="g" data-res="${l.id}" data-k="caution">Payer la caution</button></div>` : ''}
+    </div>`).join('') || '<p class="muted">Aucune annonce. Publiez-en une ci-dessous.</p>'}</div></section>`;
+
+  html += `<section><h2>Mes locations</h2>${miennes.map((b) => `<div class="card" style="margin-bottom:10px">
+      <div class="row" style="justify-content:space-between"><b style="flex:0 1 auto">${esc(b.listing?.titre)} · ${b.id}</b><span class="pill" style="flex:0 0 auto">${b.etat}</span></div>
+      <span class="muted">Caution ${fmt(b.caution)} · loyer ${fmt(b.loyer)} · fonds : ${b.fonds}${b.etat === 'bloque' ? ' · blocage depuis le ' + new Date(b.bloc_debut).toLocaleString('fr-FR') : ''}</span>
+      <div class="row" data-att="${b.id}"></div>
+      <div class="row">
+        ${b.etat === 'caution_payee' && !b.sign_loc ? `<button class="g" data-act="signer" data-id="${b.id}">Signer le contrat</button>` : ''}
+        ${b.etat === 'caution_payee' && b.sign_loc && b.sign_prop && !b.rdv_date ? `<button class="g" data-act="rdv" data-id="${b.id}">Fixer la remise des clés (demain 10 h)</button>` : ''}
+        ${b.etat === 'caution_payee' && b.rdv_date ? `<button data-act="cles" data-id="${b.id}">J’ai reçu les clés</button>` : ''}
+      </div>
+      <div class="wrap"><table><tr><th>Paiement</th><th>Montant</th><th>Moyen</th><th>Statut</th></tr>${(b.payments || []).sort((a, c) => c.created_at.localeCompare(a.created_at)).map((x) =>
+        `<tr><td>${x.kind}${x.mois ? ' ' + x.mois : ''}</td><td>${fmt(x.amount)}</td><td>${x.provider}</td><td>${x.status}</td></tr>`).join('')}</table></div>
+    </div>`).join('') || '<p class="muted">Aucune location.</p>'}</section>`;
+
+  html += `<section><h2>Mes logements (propriétaire)</h2>
+    <div class="row"><input class="in" id="lt" placeholder="Titre"><select class="in" id="ly"><option>Studio</option><option>Chambre</option><option>Appartement</option><option>Villa</option></select>
+    <input class="in" id="lq" placeholder="Quartier"><input class="in" id="lv" placeholder="Ville" value="Dakar"><input class="in" id="ll" type="number" placeholder="Loyer" value="150000">
+    <button id="lp" style="flex:0 1 auto">Publier</button></div>
+    ${surMesLogements.map((b) => `<div class="card" style="margin-top:10px"><b>${esc(b.listing?.titre)} · ${b.id}</b><span class="muted">${esc(b.loc_nom)} · ${b.etat} · fonds : ${b.fonds}</span>
+      ${b.etat === 'caution_payee' && !b.sign_prop ? `<div><button class="g" data-act="signer" data-id="${b.id}">Signer le contrat (bailleur)</button></div>` : ''}</div>`).join('')}</section>`;
+
+  if (p.role === 'admin') {
+    const { data: trs } = await sb.from('payments').select('*, booking:bookings(loc_nom, loc_tel)')
+      .in('provider', ['transfert_wave', 'transfert_om']).not('declare_le', 'is', null).in('status', ['en_attente', 'expire'])
+      .order('declare_le');
+    html += `<section><h2>Gestionnaire · transferts à vérifier</h2>
+      <p class="muted">Retrouvez chaque transfert dans l’historique de votre compte (montant, numéro, référence) avant de valider.</p>
+      <div class="wrap"><table><tr><th>Locataire</th><th>Objet</th><th>Montant</th><th>Moyen</th><th>Référence</th><th>Depuis</th><th></th></tr>${(trs || []).map((x) => `<tr>
+        <td>${esc(x.booking?.loc_nom)}<br><span class="muted">${x.booking_id}</span></td><td>${x.kind}${x.mois ? ' ' + x.mois : ''}${x.status === 'expire' ? '<br><span class="muted">délai dépassé</span>' : ''}</td>
+        <td><b>${fmt(x.amount)}</b></td><td>${x.provider === 'transfert_wave' ? 'Wave' : 'Orange Money'}</td><td>${esc(x.tx_id)}${x.declare_sms ? `<br><span class="muted">${esc(x.declare_sms).slice(0, 160)}</span>` : ''}</td>
+        <td>${esc(x.payer_tel)}<br><span class="muted">${new Date(x.declare_le).toLocaleString('fr-FR')}</span></td>
+        <td style="white-space:nowrap"><button data-tv="${x.id}">Reçu</button> <button class="g" data-tr="${x.id}">Non reçu</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">Aucun transfert en attente.</td></tr>'}</table></div></section>`;
+    const { data: pos } = await sb.from('payouts').select('*').order('created_at', { ascending: false }).limit(30);
+    html += `<section><h2>Gestionnaire · versements</h2><div class="row" style="margin-bottom:10px">
+      <button id="run" style="flex:0 1 auto">Exécuter les versements en attente</button><button class="g" id="mnt" style="flex:0 1 auto">Réconcilier les paiements</button></div>
+      <div class="wrap"><table><tr><th>Type</th><th>Bénéficiaire</th><th>Montant</th><th>Moyen</th><th>Statut</th><th></th></tr>${(pos || []).map((x) => `<tr>
+        <td>${x.kind}</td><td>${esc(x.nom)}<br><span class="muted">${esc(x.tel)}</span></td><td>${fmt(x.montant)}</td><td>${x.provider}</td><td>${x.statut}${x.erreur ? '<br><span class="muted">' + esc(x.erreur) + '</span>' : ''}</td>
+        <td>${['a_faire', 'echoue'].includes(x.statut) ? `<button class="g" data-man="${x.id}">Marquer fait</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun versement.</td></tr>'}</table></div></section>`;
+  }
+
+  html += `<section><h2>Notifications</h2>${(notifs || []).map((n) => `<p style="margin:0 0 8px"><span class="pill">${n.canal}</span> ${esc(n.texte)} <span class="muted">${new Date(n.created_at).toLocaleString('fr-FR')}</span></p>`).join('') || '<p class="muted">Aucune.</p>'}</section>`;
+  app.innerHTML = html;
+
+  // Ce qui reste à payer, calculé par le serveur
+  for (const el of app.querySelectorAll('[data-att]')) {
+    const { data } = await sb.rpc('paiements_attendus', { p_booking: el.dataset.att });
+    el.innerHTML = (data || []).map((x) => `<button class="r" data-pay="${el.dataset.att}" data-k="${x.kind}" data-m="${x.mois || ''}" data-mt="${x.montant}">Payer ${x.kind === 'loyer' ? 'le loyer ' + x.mois : x.kind} · ${fmt(x.montant)}</button>`).join('');
+  }
+  lier(annonces || [], resas || []);
+}
+
+function lier(annonces, resas) {
+  document.getElementById('ps').onclick = async () => {
+    const { error } = await sb.from('profiles').update({ nom: document.getElementById('pn').value.trim(), tel: document.getElementById('pt').value.trim() }).eq('id', me.id);
+    toast(error ? errMsg(error) : 'Profil enregistré'); rendre();
+  };
+  app.querySelectorAll('[data-res]').forEach((b) => b.onclick = async () => {
+    if (!profil.nom || profil.tel.replace(/\D/g, '').length < 9) return toast('Renseignez d’abord votre nom et votre téléphone.');
+    const l = annonces.find((x) => x.id === b.dataset.res);
+    const resa = await rpc('reserver', { p_listing: l.id, p_nom: profil.nom, p_tel: profil.tel });
+    NeegPay.payer({ bookingId: resa.id, kind: b.dataset.k, montant: b.dataset.k === 'acompte' ? resa.acompte : resa.caution, libelle: l.titre, tel: profil.tel, onSucces: rendre, onFermer: rendre });
+  });
+  app.querySelectorAll('[data-pay]').forEach((b) => b.onclick = () => {
+    const r = resas.find((x) => x.id === b.dataset.pay);
+    NeegPay.payer({ bookingId: r.id, kind: b.dataset.k, mois: b.dataset.m || null, montant: +b.dataset.mt, libelle: r.listing?.titre, tel: profil.tel, onSucces: rendre, onFermer: rendre });
+  });
+  app.querySelectorAll('[data-act]').forEach((b) => b.onclick = async () => {
+    const id = b.dataset.id;
+    if (b.dataset.act === 'signer') await rpc('signer_contrat', { p_booking: id, p_signature: signature(profil.nom) });
+    if (b.dataset.act === 'rdv') { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); await rpc('fixer_rdv', { p_booking: id, p_date: d.toISOString() }); }
+    if (b.dataset.act === 'cles') await rpc('confirmer_cles', { p_booking: id });
+    toast('Enregistré'); rendre();
+  });
+  document.getElementById('lp').onclick = async () => {
+    const v = (i) => document.getElementById(i).value.trim();
+    const { error } = await sb.from('listings').insert({ owner_id: me.id, titre: v('lt'), type: v('ly'), quartier: v('lq'), ville: v('lv'), loyer: +v('ll') });
+    toast(error ? errMsg(error) : 'Annonce publiée'); rendre();
+  };
+  const run = document.getElementById('run');
+  if (run) {
+    run.onclick = async () => { const { data, error } = await sb.functions.invoke('payouts-run', { body: {} }); toast(error ? 'Erreur' : `${data.versements.length} versement(s) traité(s)`); rendre(); };
+    document.getElementById('mnt').onclick = async () => { const { data, error } = await sb.functions.invoke('paiements-maintenance', { body: {} }); toast(error ? 'Erreur' : `${data.reconcilies.length} paiement(s) vérifié(s)`); rendre(); };
+    app.querySelectorAll('[data-tv]').forEach((b) => b.onclick = async () => {
+      const r = await rpc('valider_transfert', { p_payment: b.dataset.tv, p_ok: true });
+      toast(r === 'ok' ? 'Transfert validé' : r === 'paiement_tardif' ? 'Validé, mais la réservation était terminée : remboursement programmé' : 'Résultat : ' + r); rendre();
+    });
+    app.querySelectorAll('[data-tr]').forEach((b) => b.onclick = async () => {
+      const note = prompt('Motif du refus (envoyé au locataire) :', 'Transfert introuvable dans l’historique.'); if (note === null) return;
+      await rpc('valider_transfert', { p_payment: b.dataset.tr, p_ok: false, p_note: note }); toast('Transfert refusé'); rendre();
+    });
+    app.querySelectorAll('[data-man]').forEach((b) => b.onclick = async () => {
+      const ref = prompt('Référence de la transaction effectuée à la main :'); if (!ref) return;
+      await rpc('marquer_payout', { p_payout: b.dataset.man, p_ref: ref }); toast('Versement marqué'); rendre();
+    });
+  }
+}
+
+sb.auth.onAuthStateChange((_e, session) => setTimeout(() => {
+  me = session?.user ?? null;
+  if (me) {
+    rendre();
+    // Mise à jour en direct quand une réservation de l'utilisateur change (encaissement, expiration…)
+    if (!window.__rt) window.__rt = sb.channel('demo').on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => rendre()).subscribe();
+  } else rendreConnexion();
+}, 0));
+</script>
+</body>
+</html>

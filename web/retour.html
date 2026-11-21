@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neeg Loc · Paiement</title>
+<style>
+  :root{--bg:#F4F6F3;--surface:#fff;--ink:#14231F;--muted:#5D6B65;--line:#E1E6E1;--ok:#2F7F52;--ok-soft:#E3F2E8;--warn:#A8680F;--warn-soft:#FBF0DE;--accent:#0B5A32}
+  @media (prefers-color-scheme:dark){:root{--bg:#0D1412;--surface:#151F1C;--ink:#E8EFEB;--muted:#98A7A1;--line:#24312D;--ok:#6CC495;--ok-soft:#183027;--warn:#E8AE5A;--warn-soft:#33281A;--accent:#58B892}}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:100vh;padding:16px;box-sizing:border-box}
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px 22px;width:min(420px,100%);text-align:center}
+  .ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px}
+  .ok{background:var(--ok-soft);color:var(--ok)}.ko{background:var(--warn-soft);color:var(--warn)}
+  .spin{width:46px;height:46px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--accent);animation:s .9s linear infinite;margin:0 auto 14px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  h1{font-size:22px;margin:0 0 6px}p{color:var(--muted);margin:0 0 16px}
+  a.btn{display:block;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;border-radius:12px;padding:13px}
+</style>
+</head>
+<body>
+<div class="box" id="box"><div class="spin"></div><h1>Vérification du paiement…</h1><p>Nous attendons la confirmation de l’opérateur.</p></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+(async () => {
+  const box = document.getElementById('box');
+  const q = new URLSearchParams(location.search), id = q.get('p');
+  let retour = 'demo.html';
+  try { const s = JSON.parse(sessionStorage.getItem('neegpay-en-cours') || 'null'); if (s && s.id === id && s.retour) retour = s.retour; } catch {}
+  const fin = (ok, titre, texte) => {
+    box.innerHTML = `<div class="ic ${ok ? 'ok' : 'ko'}">${ok ? '✓' : '!'}</div><h1>${titre}</h1><p>${texte}</p><a class="btn" href="${retour}">Retour à Neeg Loc</a>`;
+    if (ok) try { sessionStorage.removeItem('neegpay-en-cours'); } catch {}
+  };
+  if (!id) return fin(false, 'Lien incomplet', 'Aucun paiement à vérifier.');
+  const cfg = window.NEEGLOC_CONFIG;
+  const sb = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return fin(false, 'Paiement en cours de vérification', 'Ouvrez Neeg Loc sur l’appareil où vous êtes connecté : la confirmation y apparaîtra automatiquement.');
+  const debut = Date.now();
+  const tick = async () => {
+    const { data } = await sb.functions.invoke('payments-status?id=' + encodeURIComponent(id), { method: 'GET' });
+    if (data && data.status === 'reussi') return fin(true, 'Paiement reçu', `${Math.round(data.amount).toLocaleString('fr-FR')} FCFA ont bien été reçus.`);
+    if (data && (data.status === 'echoue' || data.status === 'expire')) return fin(false, 'Paiement non abouti', 'Aucun montant n’a été débité par Neeg Loc. Vous pouvez réessayer.');
+    if (Date.now() - debut > 3 * 60_000) return fin(false, 'Confirmation en attente', 'Si vous avez payé, la confirmation arrivera automatiquement dans Neeg Loc.');
+    setTimeout(tick, q.get('e') ? 2500 : 4000);
+  };
+  tick();
+})();
+</script>
+</body>
+</html>
