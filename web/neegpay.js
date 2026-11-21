@@ -40,16 +40,16 @@
   .np-ov{position:fixed;inset:0;z-index:9999;background:rgba(8,14,12,.55);display:flex;align-items:center;justify-content:center;padding:16px;font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
   .np{background:#fff;color:#14231F;border-radius:20px;width:min(440px,100%);max-height:94vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
   .np-h{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid #E1E6E1}
-  .np-h b{font-size:15px}.np-x{border:0;background:#F4F6F3;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer}
+  .np-h b{font-size:15px}.np-x{border:0;background:#F4F6F3;color:#14231F;width:32px;height:32px;border-radius:50%;font-size:18px;line-height:1;padding:0;cursor:pointer}
   .np-b{padding:18px}
   .np-sum{background:#F4F6F3;border-radius:14px;padding:14px 16px;margin-bottom:16px}
   .np-sum small{display:block;color:#5D6B65;font-size:12.5px}.np-amt{font-size:30px;font-weight:700;letter-spacing:-.01em;margin-top:2px;font-variant-numeric:tabular-nums}
   .np-l{font-size:13px;font-weight:700;margin:0 0 8px}
   .np-ops{display:grid;gap:10px;margin-bottom:14px}
-  .np-op{display:flex;gap:12px;align-items:center;border:2px solid #E1E6E1;border-radius:14px;padding:12px;background:#fff;cursor:pointer;text-align:left;font:inherit}
+  .np-op{display:flex;gap:12px;align-items:center;border:2px solid #E1E6E1;border-radius:14px;padding:12px;background:#fff;color:#14231F;cursor:pointer;text-align:left;font:inherit;font-weight:400}
   .np-op[aria-pressed=true]{border-color:#0B5A32;background:#E1EFE6}
-  .np-logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;flex:none}
-  .np-op span{display:block;font-size:12.5px;color:#5D6B65}
+  .np .np-logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;flex:none}
+  .np-op div span{display:block;font-size:12.5px;color:#5D6B65}
   .np-in{width:100%;border:1px solid #E1E6E1;border-radius:10px;padding:11px 12px;font:inherit;background:#F4F6F3;box-sizing:border-box}
   .np-btn{width:100%;border:0;border-radius:12px;padding:14px;font:inherit;font-weight:700;color:#fff;background:#C8102E;cursor:pointer;margin-top:14px}
   .np-btn[disabled]{opacity:.5;cursor:wait}.np-btn.np-g{background:#fff;color:#14231F;border:1px solid #E1E6E1}
